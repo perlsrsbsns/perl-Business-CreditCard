@@ -8,10 +8,18 @@ see Business::OnlinePayment <http://www.420.am/business-onlinepayment/>
 Original author is Jon Orwant <orwant@tpj.com>, The Perl Journal and MIT
 Media Lab 
 
-Current maintainer is Ivan Kohler <ivan-business-creditcard@420.am>.
+Current maintainer of 0.37 (a fork of 0.36) is Lisa Shadow 
+<perlsrsbsns@protonmail.com>. Sorry, I had no way to open a pull request
+because couldn't find Ivan's repo anywhere and there is no contribution
+information on https://metacpan.org/contributing-to/Business-CreditCard
+Feel free to merge my commits back into your tree if you find it useful.
+
+Current maintainer of 0.36 is Ivan Kohler <ivan-business-creditcard@420.am>.
+
 Please don't bother Jon with emails about this module.
 
 Lee Lawrence <LeeL@aspin.co.uk>, Neale Banks <neale@lowendale.com.au> and
 Max Becker <Max.Becker@firstgate.com> contributed support for additional card
 types.  Lee also contributed a working test.pl.
+
 

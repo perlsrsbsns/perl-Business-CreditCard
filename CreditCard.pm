@@ -5,7 +5,7 @@ use vars qw( @ISA $VERSION @EXPORT @EXPORT_OK %EXPORT_TAGS $Country );
 
 @ISA = qw( Exporter );
 
-$VERSION = "0.36";
+$VERSION = "0.37";
 
 @EXPORT = qw( cardtype validate generate_last_digit );
 @EXPORT_OK = qw( receipt_cardtype validate_card );
@@ -42,16 +42,22 @@ to be, but additions are still most welcome.
 
 Possible return values are:
 
-  VISA card
+  VISA
   MasterCard
-  Discover card
-  American Express card
-  enRoute
+  Maestro
+  Discover
+  American Express
+  MIR
+  Dankort
+  UnionPay
   JCB
-  BankCard
-  Switch
+  RuPay
+  Troy
+  UATP
+  Verve
+  InterPayment
+  enRoute
   Solo
-  China Union Pay
   Laser
   Isracard
   Unknown
@@ -107,6 +113,12 @@ Here are the currently known agreements:
 
 =item China Union Pay cards are identified as Discover cards in the US, Mexico and most Caribbean countries.
 
+2019 upd: The problem of the above mentioned could be mistakes in BIN database commercial solutions, such as binbase.com or bindb.com.
+For example, binbase.com's Single license differs a lot from Extended license, the first one may always contain lots of errors,
+but still it's widely used by lots of small card processors/merchants due to a low cost and good availability.
+Specially many US merchants prefer using cheap outsourced solutions for their checkout systems, which often result
+into inaccurate information, please read https://baymard.com/checkout-usability/credit-card-patterns
+
 =back
 
 =head1 RECEIPT REQUIREMENTS
@@ -135,7 +147,9 @@ The Perl Journal and MIT Media Lab
 
 =head1 MAINTAINER
 
-Current maintainer is Ivan Kohler <ivan-business-creditcard@420.am>.
+Current maintainer of 0.37 (a fork of 0.36) is Lisa Shadow <perlsrsbsns@protonmail.com>.
+
+Current maintainer of 0.36 is Ivan Kohler <ivan-business-creditcard@420.am>.
 
 Lee Lawrence <LeeL@aspin.co.uk>, Neale Banks <neale@lowendale.com.au> and
 Max Becker <Max.Becker@firstgate.com> contributed support for additional card
@@ -228,11 +242,16 @@ sub cardtype {
     shift if UNIVERSAL::isa( $_[0], 'Business::CreditCard' );
 
     my ($number) = @_;
+    
+    my $cnumber = $number;
+    $cnumber =~ s/[^\d]//g; # $cnumber will be used for all checks in future, because
+							# I don't think working around 'x' just for example purposes is practical at all.
+	my $bin = int substr($cnumber,0,6);
+	
+    $number =~ s/[\s\-]//g;
+    $number =~ s/[x\*\.\_]/x/gi;
 
-    $number =~ s/[\s\-]//go;
-    $number =~ s/[x\*\.\_]/x/gio;
-
-    return "Not a credit card" if $number =~ /[^\dx]/io;
+    return "Not a credit card" if $number =~ /[^\dx]/i;
 
     #$number =~ s/\D//g;
     {
@@ -243,49 +262,70 @@ sub cardtype {
                )
             && 0+$number;
     }
+    
+    return "VISA" if $number =~ /^4[\dx]{15}$/;
+    
+    return "Dankort" if $number =~ /^5019[\dx]{12}$/;
+    
+    return "InterPayment" if $number =~ /^63[789][\dx]{13}$/;
+    return "InterPayment" if $number =~ /^636[\dx]{13,16}$/;
+    
+    return "RuPay" if $number =~ /^652[12][\dx]{12}$/;
 
-    return "VISA card" if $number =~ /^4[0-8][\dx]{11,17}$/o;
+	return "Verve" if (( $bin >= 506099 && $bin <= 506198 ) || ( $bin >= 650002 && $bin <= 650027 )) 
+	                  && (length $cnumber >= 16 && length $cnumber <= 19);
 
-    return "MasterCard"
-      if $number =~ /^5[1-5][\dx]{14}$/o
-      || $number =~ /^2 ( 22[1-9] | 2[3-9][\dx] | [3-6][\dx]{2} | 7[0-1][\dx] | 720 ) [\dx]{12}$/xo
-      || $number =~ /^2[2-7]xx[\dx]{12}$/o;
+	return "Maestro" 
+	  if $number =~ /^6759[\dx]{8,15}$/      # Maestro UK 6759
+	  || $number =~ /^67677[04][\dx]{6,13}$/ # Maestro UK 676770, 676774
+	  || $number =~ /^5[06789][\dx]{10,17}$/ # Maestro 50, 56-59
+	  || $number =~ /^6[1-9][\dx]{10,17}$/; # Maestro 61–69
 
-    return "American Express card" if $number =~ /^3[47][\dx]{13}$/o;
+    return "MasterCard" 
+      if $number =~ /^5[1-5][\dx]{14}$/
+      || $number =~ /^2 ( 22[1-9] | 2[3-9][\dx] | [3-6][\dx]{2} | 7[0-1][\dx] | 720 ) [\dx]{12}$/x
+      || $number =~ /^2[2-7]xx[\dx]{12}$/;
 
-    return "Discover card"
-      if   $number =~ /^30[0-5x][\dx]{13,16}$/o  #diner's:  300-305, 30x
-      ||   $number =~ /^309[5x][\dx]{12}$/o      #          3095, 309x
-      ||   $number =~ /^36[\dx]{12,17}$/o        #          36
-      ||   $number =~ /^3[89][\dx]{14,17}$/o     #          38 and 39
-      ||   $number =~ /^60[1x]{2}[\dx]{12,15}$/o #discover: 6011 601x 60xx
-      ||   $number =~ /^64[4-9x][\dx]{13,16}$/o  #          644-649, 64x 
-      ||   $number =~ /^65[\dx]{14,17}$/o        #          65
-      || ( $number =~ /^62[24-68x][\dx]{13,16}$/o && $Country =~ /^(US|MX|AI|AG|AW|BS|BB|BM|BQ|VG|KY|CW|DM|DO|GD|GP|JM|MQ|MS|BL|KN|LC|VC|MF|SX|TT|TC)$/oi ) #China Union Pay identified as Discover in US, Mexico and Caribbean
-      || ( $number =~ /^35(2[89x]|[3-8][\dx]|xx)[\dx]{12,15}$/o && $Country =~ /^(US|PR|VI|MP|PW|GU)$/oi ); #JCB cards in the 3528-3589 range are identified as Discover in US, Puerto Rico, US Virgin Islands, Northern Mariana Islands, Palau and Guam
+    return "American Express" if $number =~ /^3[47][\dx]{13}$/;
 
-    return "Switch"
-      if $number =~ /^49(03(0[2-9]|3[5-9])|11(0[1-2]|7[4-9]|8[1-2])|36[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o
-      || $number =~ /^564182[\dx]{10}([\dx]{2,3})?$/o
-      || $number =~ /^6(3(33[0-4][0-9])|759[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o;
-    #redunant with above, catch 49* that's not Switch
-    return "VISA card" if $number =~ /^4[\dx]{12,18}$/o;
+    return "Discover"
+      if   $number =~ /^30[0-5x][\dx]{13,16}$/  #diner's:  300-305, 30x
+      ||   $number =~ /^309[5x][\dx]{12}$/      #          3095, 309x
+      ||   $number =~ /^36[\dx]{12,17}$/        #          36
+      ||   $number =~ /^3[89][\dx]{14,17}$/     #          38 and 39
+      ||   $number =~ /^60[1x]{2}[\dx]{12,15}$/ #discover: 6011 601x 60xx
+      ||   $number =~ /^64[4-9x][\dx]{13,16}$/  #          644-649, 64x 
+      ||   $number =~ /^65[\dx]{14,17}$/        #          65
+      || ( $number =~ /^62[24-68x][\dx]{13,16}$/ && $Country =~ /^(US|MX|AI|AG|AW|BS|BB|BM|BQ|VG|KY|CW|DM|DO|GD|GP|JM|MQ|MS|BL|KN|LC|VC|MF|SX|TT|TC)$/i ) #China Union Pay identified as Discover in US, Mexico and Caribbean
+      || ( $number =~ /^35(2[89x]|[3-8][\dx]|xx)[\dx]{12,15}$/ && $Country =~ /^(US|PR|VI|MP|PW|GU)$/i ); #JCB cards in the 3528-3589 range are identified as Discover in US, Puerto Rico, US Virgin Islands, Northern Mariana Islands, Palau and Guam
 
+    # return "RuPay" if $number =~ /^60[\dx]{14}$/; # The information on the wiki might be erroneous on this one, 
+													# because binbase.com lists the whole range 60* as Maestro
+													# This will remain commented and reserved for future just in case
+													# something change.
+													
+	return "Maestro" if $number =~ /^60[\dx]{10,17}$/;
+
+    return "MIR" if $number =~ /^220[0-4][\dx]{12}$/;
+
+    return "Troy" if $number =~ /^9792[0-8][0-9][\dx]{10}$/;
+
+    return "UATP" if $number =~ /^1[\dx]{14}$/;
+    
     #"Diners Club enRoute"
-    return "enRoute" if $number =~ /^2(014|149)[\dx]{11}$/o;
+    return "enRoute" if $number =~ /^2(014|149)[\dx]{11}$/; # Diners Club enRoute is obsolete
 
-    return "JCB" if $number =~ /^(3[\dx]{4}|2131|1800)[\dx]{11}$/o;
+    return "JCB" if $number =~ /^(3[\dx]{4}|2131|1800)[\dx]{11}$/;
 
-    return "BankCard" if $number =~ /^56(10[\dx][\dx]|022[1-5])[\dx]{10}$/o;
+    return "Solo" # Solo is obsolete
+      if $number =~ /^6(3(34[5-9][0-9])|767[0-9]{2})[\dx]{10}([\dx]{2,3})?$/;
 
-    return "Solo"
-      if $number =~ /^6(3(34[5-9][0-9])|767[0-9]{2})[\dx]{10}([\dx]{2,3})?$/o;
-
-    return "China Union Pay"
-      if $number =~ /^62[24-68][\dx]{13}$/o;
-
-    return "Laser"
-      if $number =~ /^6(304|7(06|09|71))[\dx]{12,15}$/o;
+    return "UnionPay"
+      if $number =~ /^62[\dx]{14,17}$/
+      || $number =~ /^81[\dx]{14}$/;
+      
+    return "Laser" # Laser is obsolete
+      if $number =~ /^6(304|7(06|09|71))[\dx]{12,15}$/;
 
     return "Isracard"
       if $number =~ /^[\dx]{8,9}$/;
@@ -299,11 +339,11 @@ sub receipt_cardtype {
 
     my ($number) = @_;
 
-    $number =~ s/[\s\-]//go;
-    $number =~ s/[x\*\.\_]/x/gio;
+    $number =~ s/[\s\-]//g;
+    $number =~ s/[x\*\.\_]/x/gi;
 
     #ref Discover IIN Bulletin Feb 2015_021715
-    return "PayPal card" if $number =~ /^6(01104|506[01]0)[\dx]{10,13}$/o;
+    return "PayPal card" if $number =~ /^6(01104|506[01]0)[\dx]{10,13}$/;
 
     cardtype($number);
 }

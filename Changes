@@ -1,5 +1,22 @@
 Revision history for Perl extension Business::CreditCard.
 
+0.37  Mon Apr  1 01:13:37 PDT 2019
+		- Added Maestro
+		- Added Dankort (5019)
+		- Added InterPayment (virtual cards)
+		- Added MIR
+		- Added Troy
+		- Added UATP
+		- Added Verve along with appropriate BIN range check
+		- Added RuPay
+		- Updated UnionPay ranges
+        - Removed "BankCard" because it's obsolete and its ranges are now fully 
+		  covered by Maestro
+		- Removed "Switch" because it's obsolete and its ranges are now fully 
+		  covered by Visa and Maestro
+		- Removed unnecessary /o modifiers from regexps
+		- Removed ' card' endings from returned types (what was the point of it?)
+
 0.36  Tue Jun 14 11:36:05 PDT 2016
         - Allow (and doc) import of receipt_cardtype
         - validate_card() is a new synonym for validate(), starting a long-term
