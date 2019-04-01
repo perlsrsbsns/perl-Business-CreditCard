@@ -10,7 +10,7 @@ Revision history for Perl extension Business::CreditCard.
 	- Added Verve along with appropriate BIN range check
 	- Added RuPay
 	- Updated UnionPay ranges
-        - Removed "BankCard" because it's obsolete and its ranges are now fully 
+	- Removed "BankCard" because it's obsolete and its ranges are now fully 
 	  covered by Maestro
 	- Removed "Switch" because it's obsolete and its ranges are now fully 
 	  covered by Visa and Maestro
