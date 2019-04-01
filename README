@@ -22,4 +22,23 @@ Lee Lawrence <LeeL@aspin.co.uk>, Neale Banks <neale@lowendale.com.au> and
 Max Becker <Max.Becker@firstgate.com> contributed support for additional card
 types.  Lee also contributed a working test.pl.
 
+Currently supported types
 
+  VISA
+  MasterCard
+  Maestro
+  Discover
+  American Express
+  MIR
+  Dankort
+  UnionPay
+  JCB
+  RuPay
+  Troy
+  UATP
+  Verve
+  InterPayment
+  enRoute
+  Solo
+  Laser
+  Isracard
