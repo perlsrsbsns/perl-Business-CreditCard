@@ -5,7 +5,7 @@ use vars qw( @ISA $VERSION @EXPORT @EXPORT_OK %EXPORT_TAGS $Country );
 
 @ISA = qw( Exporter );
 
-$VERSION = "0.37";
+$VERSION = "0.38";
 
 @EXPORT = qw( cardtype validate generate_last_digit );
 @EXPORT_OK = qw( receipt_cardtype validate_card );
@@ -263,7 +263,7 @@ sub cardtype {
             && 0+$number;
     }
     
-    return "VISA" if $number =~ /^4[\dx]{15}$/;
+    return "VISA" if $number =~ /^4[\dx]{12,18}$/; # according to https://developer.visa.com/capabilities/pav/reference#pav__pav__v1__cardvalidation
     
     return "Dankort" if $number =~ /^5019[\dx]{12}$/;
     
@@ -275,11 +275,16 @@ sub cardtype {
 	return "Verve" if (( $bin >= 506099 && $bin <= 506198 ) || ( $bin >= 650002 && $bin <= 650027 )) 
 	                  && (length $cnumber >= 16 && length $cnumber <= 19);
 
+    return "UnionPay"
+      if $number =~ /^62[\dx]{14,17}$/
+      || $number =~ /^81[\dx]{14}$/;
+      
 	return "Maestro" 
 	  if $number =~ /^6759[\dx]{8,15}$/      # Maestro UK 6759
 	  || $number =~ /^67677[04][\dx]{6,13}$/ # Maestro UK 676770, 676774
 	  || $number =~ /^5[06789][\dx]{10,17}$/ # Maestro 50, 56-59
-	  || $number =~ /^6[1-9][\dx]{10,17}$/; # Maestro 61–69
+	  || $number =~ /^6[1-3][\dx]{10,17}$/ # Maestro 61–63
+	  || $number =~ /^6[6-9][\dx]{10,17}$/; # Maestro 66–69
 
     return "MasterCard" 
       if $number =~ /^5[1-5][\dx]{14}$/
@@ -320,10 +325,6 @@ sub cardtype {
     return "Solo" # Solo is obsolete
       if $number =~ /^6(3(34[5-9][0-9])|767[0-9]{2})[\dx]{10}([\dx]{2,3})?$/;
 
-    return "UnionPay"
-      if $number =~ /^62[\dx]{14,17}$/
-      || $number =~ /^81[\dx]{14}$/;
-      
     return "Laser" # Laser is obsolete
       if $number =~ /^6(304|7(06|09|71))[\dx]{12,15}$/;
 

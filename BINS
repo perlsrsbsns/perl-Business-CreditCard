@@ -1,3 +1,12 @@
+from binbase.com enterprise license
+As per 2019, a lot of changes have been made to the ISO/IEC 7812 registry. 
+Some changes happen amazingly fast and sometimes difficult to track. It 
+looks like global vendors frequently trade some BIN ranges between each 
+other. I will try to keep an eye on the database and deploy patches 
+accordingly.
+
+--
+
 from http://perl.about.com/compute/perl/library/nosearch/P073000.htm
 verified by http://www.beachnet.com/~hstiles/cardtype.html
 Card Type                         Prefix                           Length
